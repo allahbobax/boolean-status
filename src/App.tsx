@@ -21,6 +21,13 @@ export interface ServiceStatus {
   history: HistoryPoint[]
 }
 
+export interface IncidentUpdate {
+  id: number
+  status: 'investigating' | 'identified' | 'monitoring' | 'resolved'
+  message: string
+  createdAt: string
+}
+
 export interface Incident {
   id: string
   title: string
@@ -30,6 +37,7 @@ export interface Incident {
   createdAt: string
   updatedAt: string
   affectedServices: string[]
+  updates: IncidentUpdate[]
 }
 
 const API_URL = 'https://api.booleanclient.ru'

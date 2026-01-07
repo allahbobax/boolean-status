@@ -11,7 +11,7 @@ const SEVERITY_LABELS = {
   critical: 'Critical',
 }
 
-const STATUS_LABELS = {
+const STATUS_LABELS: Record<string, string> = {
   investigating: 'Investigating',
   identified: 'Identified',
   monitoring: 'Monitoring',
@@ -29,6 +29,16 @@ export default function IncidentsList({ incidents }: IncidentsListProps) {
     })
   }
 
+  const getStatusClass = (status: string) => {
+    switch (status) {
+      case 'investigating': return 'status-investigating'
+      case 'identified': return 'status-identified'
+      case 'monitoring': return 'status-monitoring'
+      case 'resolved': return 'status-resolved'
+      default: return ''
+    }
+  }
+
   return (
     <div className="incidents-section">
       <h2 className="incidents-title">Active Incidents</h2>
@@ -43,32 +53,70 @@ export default function IncidentsList({ incidents }: IncidentsListProps) {
         </div>
       ) : (
         <div className="incidents-list">
-          {incidents.map(incident => (
-            <div key={incident.id} className="incident-card">
-              <div className="incident-header">
-                <div className="incident-title-row">
-                  <span className="incident-severity">
-                    {SEVERITY_LABELS[incident.severity]}
-                  </span>
-                  <h3 className="incident-title">{incident.title}</h3>
+          {incidents.map(incident => {
+            // Сортируем updates от старых к новым (старые сверху, новые снизу)
+            const sortedUpdates = [...(incident.updates || [])].sort(
+              (a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
+            )
+
+            return (
+              <div key={incident.id} className="incident-card">
+                <div className="incident-card-header">
+                  <div className="incident-title-row">
+                    <span className={`incident-severity severity-${incident.severity}`}>
+                      {SEVERITY_LABELS[incident.severity]}
+                    </span>
+                    <h3 className="incident-title">{incident.title}</h3>
+                  </div>
+                  <div className="incident-services">
+                    {incident.affectedServices.map(service => (
+                      <span key={service} className="affected-service">{service}</span>
+                    ))}
+                  </div>
                 </div>
-                <span className="incident-status">
-                  {STATUS_LABELS[incident.status]}
-                </span>
-              </div>
-              <p className="incident-description">{incident.description}</p>
-              <div className="incident-footer">
-                <div className="incident-services">
-                  {incident.affectedServices.map(service => (
-                    <span key={service} className="affected-service">{service}</span>
-                  ))}
+                
+                <div className="incident-timeline">
+                  {sortedUpdates.length === 0 ? (
+                    /* Если нет updates - показываем описание инцидента */
+                    <div className={`timeline-item ${getStatusClass(incident.status)}`}>
+                      <div className="timeline-marker">
+                        <div className="timeline-dot"></div>
+                      </div>
+                      <div className="timeline-content">
+                        <div className="timeline-header">
+                          <span className="timeline-status">{STATUS_LABELS[incident.status]}</span>
+                          <span className="timeline-time">{formatDate(incident.createdAt)}</span>
+                        </div>
+                        <p className="timeline-description">{incident.description}</p>
+                      </div>
+                    </div>
+                  ) : (
+                    /* Если есть updates - показываем их, первый с описанием инцидента */
+                    sortedUpdates.map((update, index) => (
+                      <div 
+                        key={update.id} 
+                        className={`timeline-item ${getStatusClass(update.status)}`}
+                      >
+                        <div className="timeline-marker">
+                          <div className="timeline-dot"></div>
+                          {index < sortedUpdates.length - 1 && <div className="timeline-line"></div>}
+                        </div>
+                        <div className="timeline-content">
+                          <div className="timeline-header">
+                            <span className="timeline-status">{STATUS_LABELS[update.status] || update.status}</span>
+                            <span className="timeline-time">{formatDate(update.createdAt)}</span>
+                          </div>
+                          <p className="timeline-description">
+                            {index === 0 ? incident.description : update.message}
+                          </p>
+                        </div>
+                      </div>
+                    ))
+                  )}
                 </div>
-                <span className="incident-time">
-                  Updated: {formatDate(incident.updatedAt)}
-                </span>
               </div>
-            </div>
-          ))}
+            )
+          })}
         </div>
       )}
     </div>
