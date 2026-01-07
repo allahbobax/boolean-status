@@ -90,7 +90,7 @@ function App() {
       checkService(`${API_URL}/auth/check`),
       checkService(`${API_URL}/health`),
       checkService('https://booleanclient.ru'),
-      checkService(`${API_URL}/versions?action=latest`),
+      checkService(`${API_URL}/versions/latest`),
     ])
 
     const statusMap: Record<string, { status: ServiceStatus['status'], responseTime: number }> = {
