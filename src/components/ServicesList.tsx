@@ -1,6 +1,5 @@
 import type { ServiceStatus } from '../App'
 import { BiCodeAlt, BiLock, BiGlobe, BiPlay, BiDesktop } from 'react-icons/bi'
-import './ServicesList.css'
 
 interface ServicesListProps {
   services: ServiceStatus[]
@@ -37,7 +36,6 @@ const formatTime = (date: Date) => {
 }
 
 const formatUptimeDuration = (historyLength: number) => {
-  // Каждая точка = 10 секунд (интервал обновления)
   const totalSeconds = historyLength * 10
   const minutes = Math.floor(totalSeconds / 60)
   const hours = Math.floor(minutes / 60)
@@ -49,50 +47,67 @@ const formatUptimeDuration = (historyLength: number) => {
   return `${minutes}m`
 }
 
+const getBadgeClass = (status: string) => {
+  if (status === 'operational') {
+    return 'text-text-primary border-[rgba(255,255,255,0.2)]'
+  }
+  return 'text-text-secondary border-[rgba(255,255,255,0.15)]'
+}
+
+const getBarClass = (status: string) => {
+  if (status === 'operational') {
+    return 'bg-white/50 hover:bg-white/80'
+  }
+  return 'bg-white/30 hover:bg-white/50'
+}
+
 export default function ServicesList({ services, loading }: ServicesListProps) {
   return (
-    <div className="services-section">
-      <h2 className="services-title">Services</h2>
-      <div className="services-list">
+    <div className="flex flex-col gap-4">
+      <h2 className="text-xl font-semibold text-text-primary">Services</h2>
+      <div className="grid grid-cols-[repeat(auto-fit,minmax(280px,1fr))] gap-4 max-md:grid-cols-1">
         {services.map(service => {
           const historySlice = service.history.slice(-30)
           const firstPoint = historySlice[0]
           const lastPoint = historySlice[historySlice.length - 1]
           
           return (
-            <div key={service.name} className={`service-card ${service.status}`}>
-              <div className="service-header">
-                <div className="service-name-row">
-                  <span className="service-icon">
+            <div 
+              key={service.name} 
+              className="bg-card-bg border border-border-color rounded-xl p-5 transition-all duration-300 hover:bg-[rgba(255,255,255,0.05)] hover:border-[rgba(255,255,255,0.2)]"
+            >
+              <div className="flex justify-between items-center mb-4">
+                <div className="flex items-center gap-3">
+                  <span className="w-5 h-5 text-text-secondary [&>svg]:w-full [&>svg]:h-full">
                     <ServiceIcon name={service.name} />
                   </span>
-                  <span className="service-name">{service.name}</span>
+                  <span className="text-[1.1rem] font-semibold text-text-primary">{service.name}</span>
                 </div>
-                <span className={`service-status-badge ${service.status}`}>
+                <span className={`py-1 px-3 rounded-[20px] text-xs font-semibold uppercase tracking-wide bg-[rgba(255,255,255,0.05)] border ${getBadgeClass(service.status)}`}>
                   {loading ? 'Checking...' : STATUS_LABELS[service.status]}
                 </span>
               </div>
-              <div className="service-metrics">
-                <div className="metric">
-                  <span className="metric-label">Response Time</span>
-                  <span className="metric-value">{loading ? '—' : `${service.responseTime}ms`}</span>
+              <div className="flex gap-8 mb-4 max-md:gap-6">
+                <div className="flex flex-col gap-1">
+                  <span className="text-xs text-text-tertiary uppercase tracking-wide">Response Time</span>
+                  <span className="text-base font-semibold text-text-primary font-mono">{loading ? '—' : `${service.responseTime}ms`}</span>
                 </div>
-                <div className="metric">
-                  <span className="metric-label">Uptime</span>
-                  <span className="metric-value">{loading ? '—' : `${service.uptime.toFixed(1)}%`}</span>
+                <div className="flex flex-col gap-1">
+                  <span className="text-xs text-text-tertiary uppercase tracking-wide">Uptime</span>
+                  <span className="text-base font-semibold text-text-primary font-mono">{loading ? '—' : `${service.uptime.toFixed(1)}%`}</span>
                 </div>
               </div>
-              <div className="service-history-container">
-                <div className="history-period-label">
+              <div className="pt-2 border-t border-border-color">
+                <div className="text-[0.7rem] text-text-tertiary uppercase tracking-wide mb-2 text-center">
                   {historySlice.length > 0 && (
                     <>Last {formatUptimeDuration(historySlice.length)}</>
                   )}
                 </div>
-                <div className="service-history">
+                <div className="flex items-end gap-0.5 h-10">
                   {historySlice.map((point, i) => (
                     <div 
                       key={i}
-                      className={`history-bar ${point.status}`}
+                      className={`flex-1 min-h-[2px] rounded-sm transition-[height] duration-300 cursor-pointer ${getBarClass(point.status)}`}
                       style={{ 
                         height: `${Math.max(4, Math.min(100, (point.responseTime / 500) * 100))}%`,
                         opacity: 0.3 + (i / 30) * 0.7
@@ -101,10 +116,10 @@ export default function ServicesList({ services, loading }: ServicesListProps) {
                     />
                   ))}
                 </div>
-                <div className="history-time-labels">
-                  {firstPoint && <span className="time-label">{formatTime(firstPoint.time)}</span>}
-                  <span className="time-label-spacer" />
-                  {lastPoint && <span className="time-label">{formatTime(lastPoint.time)}</span>}
+                <div className="flex justify-between items-center mt-1.5">
+                  {firstPoint && <span className="text-[0.65rem] text-text-tertiary font-mono">{formatTime(firstPoint.time)}</span>}
+                  <span className="flex-1" />
+                  {lastPoint && <span className="text-[0.65rem] text-text-tertiary font-mono">{formatTime(lastPoint.time)}</span>}
                 </div>
               </div>
             </div>

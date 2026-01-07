@@ -1,7 +1,6 @@
 import { useState, useRef } from 'react'
 import { BiLock, BiCodeAlt, BiGlobe, BiPlay, BiDesktop } from 'react-icons/bi'
 import type { ServiceStatus, HistoryPoint } from '../App'
-import './StatusChart.css'
 
 interface StatusChartProps {
   services: ServiceStatus[]
@@ -81,32 +80,31 @@ export default function StatusChart({ services }: StatusChartProps) {
     setTooltip(null)
   }
 
-  // Показываем последние 90 точек или меньше
   const maxPoints = 90
 
   return (
-    <div className="status-chart-section" ref={containerRef}>
-      <h2 className="chart-title">Uptime History</h2>
-      <p className="chart-subtitle">Last {maxPoints} checks • Updated every 10 seconds</p>
+    <div className="relative bg-card-bg border border-border-color rounded-2xl p-6 max-md:p-4" ref={containerRef}>
+      <h2 className="text-xl font-semibold mb-1 text-text-primary">Uptime History</h2>
+      <p className="text-[0.85rem] text-text-tertiary mb-6">Last {maxPoints} checks • Updated every 10 seconds</p>
       
-      <div className="heatmap-container">
+      <div className="flex flex-col gap-3">
         {services.map(service => (
-          <div key={service.name} className="heatmap-row">
-            <div className="heatmap-label">
-              <span className="heatmap-icon">
+          <div key={service.name} className="flex items-center gap-4 max-md:flex-col max-md:items-start max-md:gap-2">
+            <div className="flex items-center gap-2 min-w-[140px] shrink-0 max-md:min-w-0 max-md:w-full">
+              <span className="w-[18px] h-[18px] text-text-secondary flex items-center justify-center [&>svg]:w-full [&>svg]:h-full">
                 <ServiceIcon name={service.name} />
               </span>
-              <span className="heatmap-name">{service.name}</span>
-              <span className="heatmap-uptime">{service.uptime.toFixed(1)}%</span>
+              <span className="font-medium text-text-primary text-sm">{service.name}</span>
+              <span className="font-mono text-xs text-text-tertiary ml-auto">{service.uptime.toFixed(1)}%</span>
             </div>
-            <div className="heatmap-cells" onMouseLeave={handleMouseLeave}>
+            <div className="flex gap-0.5 flex-1 min-h-[24px] items-center max-md:w-full" onMouseLeave={handleMouseLeave}>
               {service.history.length === 0 ? (
-                <div className="heatmap-empty">No data yet</div>
+                <div className="text-text-tertiary text-[0.85rem] italic">No data yet</div>
               ) : (
                 service.history.map((point, idx) => (
                   <div
                     key={idx}
-                    className="heatmap-cell"
+                    className="flex-1 max-w-2 h-6 rounded-sm cursor-pointer transition-all duration-150 opacity-85 hover:scale-y-[1.3] hover:opacity-100 hover:z-[1] max-md:h-5"
                     style={{ backgroundColor: getStatusColor(point.status, point.responseTime) }}
                     onMouseEnter={(e) => handleCellHover(e, service, point)}
                   />
@@ -117,52 +115,44 @@ export default function StatusChart({ services }: StatusChartProps) {
         ))}
       </div>
 
-      <div className="heatmap-legend">
-        <span className="legend-label">Status:</span>
-        <div className="legend-items">
-          <div className="legend-item">
-            <span className="legend-color" style={{ backgroundColor: '#22c55e' }} />
-            <span>Good</span>
-          </div>
-          <div className="legend-item">
-            <span className="legend-color" style={{ backgroundColor: '#84cc16' }} />
-            <span>Slow</span>
-          </div>
-          <div className="legend-item">
-            <span className="legend-color" style={{ backgroundColor: '#eab308' }} />
-            <span>Degraded</span>
-          </div>
-          <div className="legend-item">
-            <span className="legend-color" style={{ backgroundColor: '#f97316' }} />
-            <span>Partial</span>
-          </div>
-          <div className="legend-item">
-            <span className="legend-color" style={{ backgroundColor: '#ef4444' }} />
-            <span>Outage</span>
-          </div>
+      <div className="flex items-center gap-4 mt-6 pt-4 border-t border-border-color max-md:flex-col max-md:items-start max-md:gap-2">
+        <span className="text-[0.85rem] text-text-tertiary">Status:</span>
+        <div className="flex gap-4 flex-wrap">
+          {[
+            { color: '#22c55e', label: 'Good' },
+            { color: '#84cc16', label: 'Slow' },
+            { color: '#eab308', label: 'Degraded' },
+            { color: '#f97316', label: 'Partial' },
+            { color: '#ef4444', label: 'Outage' },
+          ].map(item => (
+            <div key={item.label} className="flex items-center gap-1.5 text-xs text-text-secondary">
+              <span className="w-3 h-3 rounded-sm" style={{ backgroundColor: item.color }} />
+              <span>{item.label}</span>
+            </div>
+          ))}
         </div>
       </div>
 
       {tooltip && (
         <div
-          className="heatmap-tooltip"
+          className="absolute py-3 px-4 bg-[rgba(15,15,20,0.98)] border border-border-color rounded-lg text-[0.85rem] text-text-primary pointer-events-none z-[100] min-w-[160px] backdrop-blur-sm shadow-[0_4px_20px_rgba(0,0,0,0.5)]"
           style={{
             left: tooltip.x,
             top: tooltip.y - 10,
             transform: 'translate(-50%, -100%)'
           }}
         >
-          <div className="tooltip-header">{tooltip.service.name}</div>
-          <div className="tooltip-time">{formatTime(tooltip.point.time)}</div>
-          <div className="tooltip-status">
+          <div className="font-semibold mb-1">{tooltip.service.name}</div>
+          <div className="font-mono text-xs text-text-tertiary mb-2">{formatTime(tooltip.point.time)}</div>
+          <div className="flex items-center gap-1.5 mb-1">
             <span
-              className="tooltip-dot"
+              className="w-2 h-2 rounded-full"
               style={{ backgroundColor: getStatusColor(tooltip.point.status, tooltip.point.responseTime) }}
             />
             {getStatusLabel(tooltip.point.status)}
           </div>
-          <div className="tooltip-response">
-            Response: <strong>{tooltip.point.responseTime}ms</strong>
+          <div className="text-xs text-text-secondary">
+            Response: <strong className="text-text-primary font-mono">{tooltip.point.responseTime}ms</strong>
           </div>
         </div>
       )}

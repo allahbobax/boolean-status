@@ -5,7 +5,7 @@ import StatusChart from './components/StatusChart.tsx'
 import ServicesList from './components/ServicesList.tsx'
 import IncidentsList from './components/IncidentsList.tsx'
 import Footer from './components/Footer.tsx'
-import './styles/App.css'
+
 
 export interface HistoryPoint {
   time: Date
