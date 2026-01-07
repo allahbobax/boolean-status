@@ -41,6 +41,12 @@ export interface Incident {
 }
 
 const API_URL = 'https://api.booleanclient.ru'
+const API_KEY = import.meta.env.VITE_API_KEY || ''
+
+const apiHeaders = {
+  'Content-Type': 'application/json',
+  ...(API_KEY && { 'x-api-key': API_KEY })
+}
 
 const defaultServices: ServiceStatus[] = [
   { name: 'Auth', status: 'operational', responseTime: 0, uptime: 100, history: [] },
@@ -58,10 +64,10 @@ function App() {
   const fetchStatus = useCallback(async () => {
     try {
       // First trigger a new check
-      await fetch(`${API_URL}/status/check`, { method: 'POST' })
+      await fetch(`${API_URL}/status/check`, { method: 'POST', headers: apiHeaders })
       
       // Then get the updated status
-      const response = await fetch(`${API_URL}/status`)
+      const response = await fetch(`${API_URL}/status`, { headers: apiHeaders })
       const data = await response.json()
       
       if (data.success && data.data) {
@@ -93,7 +99,7 @@ function App() {
 
   const fetchIncidents = useCallback(async () => {
     try {
-      const response = await fetch(`${API_URL}/incidents?action=active`)
+      const response = await fetch(`${API_URL}/incidents?action=active`, { headers: apiHeaders })
       const data = await response.json()
       if (data.success && data.data) {
         setIncidents(data.data)
