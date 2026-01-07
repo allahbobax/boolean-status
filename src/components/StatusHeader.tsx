@@ -1,3 +1,4 @@
+import { BiArrowBack } from 'react-icons/bi'
 import './StatusHeader.css'
 
 export default function StatusHeader() {
@@ -19,10 +20,7 @@ export default function StatusHeader() {
           <span className="logo-status">Status</span>
         </a>
         <a href="https://booleanclient.ru" className="header-back">
-          <svg className="back-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-            <line x1="19" y1="12" x2="5" y2="12" />
-            <polyline points="12 19 5 12 12 5" />
-          </svg>
+          <BiArrowBack className="back-icon" />
           Back to Boolean
         </a>
       </div>
