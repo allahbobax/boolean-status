@@ -89,7 +89,7 @@ function App() {
     const [authStatus, apiStatus, siteStatus, launcherStatus] = await Promise.all([
       checkService(`${API_URL}/auth/check`),
       checkService(`${API_URL}/health`),
-      checkService('https://booleanclient.ru'),
+      checkService(`${API_URL}/health/site`), // Проверка через бэкенд (обход CORS)
       checkService(`${API_URL}/versions/latest`),
     ])
 
