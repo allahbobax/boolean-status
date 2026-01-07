@@ -84,8 +84,7 @@ export default function StatusChart({ services }: StatusChartProps) {
 
   return (
     <div className="relative bg-card-bg border border-border-color rounded-2xl p-6 max-md:p-4" ref={containerRef}>
-      <h2 className="text-xl font-semibold mb-1 text-text-primary">Uptime History</h2>
-      <p className="text-[0.85rem] text-text-tertiary mb-6">Last {maxPoints} checks • Updated every 10 seconds</p>
+      <h2 className="text-xl font-semibold mb-6 text-text-primary">Uptime History</h2>
       
       <div className="flex flex-col gap-3">
         {services.map(service => (
@@ -115,23 +114,7 @@ export default function StatusChart({ services }: StatusChartProps) {
         ))}
       </div>
 
-      <div className="flex items-center gap-4 mt-6 pt-4 border-t border-border-color max-md:flex-col max-md:items-start max-md:gap-2">
-        <span className="text-[0.85rem] text-text-tertiary">Status:</span>
-        <div className="flex gap-4 flex-wrap">
-          {[
-            { color: '#22c55e', label: 'Good' },
-            { color: '#84cc16', label: 'Slow' },
-            { color: '#eab308', label: 'Degraded' },
-            { color: '#f97316', label: 'Partial' },
-            { color: '#ef4444', label: 'Outage' },
-          ].map(item => (
-            <div key={item.label} className="flex items-center gap-1.5 text-xs text-text-secondary">
-              <span className="w-3 h-3 rounded-sm" style={{ backgroundColor: item.color }} />
-              <span>{item.label}</span>
-            </div>
-          ))}
-        </div>
-      </div>
+
 
       {tooltip && (
         <div

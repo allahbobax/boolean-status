@@ -61,12 +61,9 @@ function App() {
   const [loading, setLoading] = useState(true)
   const [lastUpdated, setLastUpdated] = useState<Date>(new Date())
 
-  const fetchStatus = useCallback(async () => {
+  // Fetch cached status from DB (fast, no live checks)
+  const fetchCachedStatus = useCallback(async () => {
     try {
-      // First trigger a new check
-      await fetch(`${API_URL}/status/check`, { method: 'POST', headers: apiHeaders })
-      
-      // Then get the updated status
       const response = await fetch(`${API_URL}/status`, { headers: apiHeaders })
       const data = await response.json()
       
@@ -89,11 +86,42 @@ function App() {
           }))
         }))
         setServices(mappedServices)
+        setLastUpdated(new Date())
       }
-      
-      setLastUpdated(new Date())
     } catch (error) {
-      console.error('Failed to fetch status:', error)
+      console.error('Failed to fetch cached status:', error)
+    }
+  }, [])
+
+  // Trigger a live check and update with results
+  const triggerLiveCheck = useCallback(async () => {
+    try {
+      const response = await fetch(`${API_URL}/status/check`, { method: 'POST', headers: apiHeaders })
+      const data = await response.json()
+      
+      if (data.success && data.data) {
+        // Update services with live check results immediately
+        setServices(prev => prev.map(service => {
+          const liveResult = data.data.find((r: { name: string }) => r.name === service.name)
+          if (liveResult) {
+            return {
+              ...service,
+              status: liveResult.status as ServiceStatus['status'],
+              responseTime: liveResult.responseTime,
+              // Add new point to history
+              history: [...service.history.slice(-29), {
+                time: new Date(),
+                responseTime: liveResult.responseTime,
+                status: liveResult.status as HistoryPoint['status']
+              }]
+            }
+          }
+          return service
+        }))
+        setLastUpdated(new Date())
+      }
+    } catch (error) {
+      console.error('Failed to trigger live check:', error)
     }
   }, [])
 
@@ -112,19 +140,23 @@ function App() {
   useEffect(() => {
     const init = async () => {
       setLoading(true)
-      await Promise.all([fetchStatus(), fetchIncidents()])
+      // First load cached data instantly, then trigger live check in background
+      await Promise.all([fetchCachedStatus(), fetchIncidents()])
       setLoading(false)
+      // Trigger live check after initial load (non-blocking)
+      triggerLiveCheck()
     }
     
     init()
-    const statusInterval = setInterval(fetchStatus, 10000)
+    // Live checks every 5 minutes
+    const statusInterval = setInterval(triggerLiveCheck, 300000)
     const incidentsInterval = setInterval(fetchIncidents, 60000)
     
     return () => {
       clearInterval(statusInterval)
       clearInterval(incidentsInterval)
     }
-  }, [fetchStatus, fetchIncidents])
+  }, [fetchCachedStatus, fetchIncidents, triggerLiveCheck])
 
   const overallStatus = services.some(s => s.status === 'major') 
     ? 'major' 
