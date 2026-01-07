@@ -1,10 +1,10 @@
 import { useState, useEffect, useCallback } from 'react'
 import StatusHeader from './components/StatusHeader'
-import StatusOverview from './components/StatusOverview'
-import StatusChart from './components/StatusChart'
-import ServicesList from './components/ServicesList'
-import IncidentsList from './components/IncidentsList'
-import Footer from './components/Footer'
+import StatusOverview from './components/StatusOverview.tsx'
+import StatusChart from './components/StatusChart.tsx'
+import ServicesList from './components/ServicesList.tsx'
+import IncidentsList from './components/IncidentsList.tsx'
+import Footer from './components/Footer.tsx'
 import './styles/App.css'
 
 export interface HistoryPoint {
