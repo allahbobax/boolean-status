@@ -33,14 +33,36 @@ export interface Incident {
 }
 
 const API_URL = 'https://api.booleanclient.ru'
+const STORAGE_KEY = 'status-page-history'
 
-function App() {
-  const [services, setServices] = useState<ServiceStatus[]>([
+// Загружаем историю из localStorage
+const loadStoredHistory = (): ServiceStatus[] => {
+  try {
+    const stored = localStorage.getItem(STORAGE_KEY)
+    if (stored) {
+      const data = JSON.parse(stored)
+      // Восстанавливаем Date объекты из строк
+      return data.map((service: ServiceStatus) => ({
+        ...service,
+        history: service.history.map((point: HistoryPoint) => ({
+          ...point,
+          time: new Date(point.time)
+        }))
+      }))
+    }
+  } catch (e) {
+    console.error('Failed to load history from localStorage:', e)
+  }
+  return [
     { name: 'Auth', status: 'operational', responseTime: 0, uptime: 100, history: [] },
     { name: 'API', status: 'operational', responseTime: 0, uptime: 100, history: [] },
     { name: 'Site', status: 'operational', responseTime: 0, uptime: 100, history: [] },
     { name: 'Launcher', status: 'operational', responseTime: 0, uptime: 100, history: [] },
-  ])
+  ]
+}
+
+function App() {
+  const [services, setServices] = useState<ServiceStatus[]>(loadStoredHistory)
   const [incidents, setIncidents] = useState<Incident[]>([])
   const [loading, setLoading] = useState(true)
   const [lastUpdated, setLastUpdated] = useState<Date>(new Date())
@@ -78,30 +100,41 @@ function App() {
       'Launcher': launcherStatus,
     }
 
-    setServices(prev => prev.map(service => {
-      const newStatus = statusMap[service.name]
-      const now = new Date()
+    setServices(prev => {
+      const updated = prev.map(service => {
+        const newStatus = statusMap[service.name]
+        const now = new Date()
+        
+        const newPoint: HistoryPoint = {
+          time: now,
+          responseTime: newStatus.responseTime,
+          status: newStatus.status
+        }
+        
+        const newHistory = [...service.history, newPoint].slice(-90)
+        
+        // Calculate uptime from history
+        const operationalCount = newHistory.filter(h => h.status === 'operational' || h.status === 'degraded').length
+        const uptime = newHistory.length > 0 ? (operationalCount / newHistory.length) * 100 : 100
+        
+        return {
+          ...service,
+          status: newStatus.status,
+          responseTime: newStatus.responseTime,
+          uptime,
+          history: newHistory,
+        }
+      })
       
-      const newPoint: HistoryPoint = {
-        time: now,
-        responseTime: newStatus.responseTime,
-        status: newStatus.status
+      // Сохраняем в localStorage
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(updated))
+      } catch (e) {
+        console.error('Failed to save history to localStorage:', e)
       }
       
-      const newHistory = [...service.history, newPoint].slice(-90)
-      
-      // Calculate uptime from history
-      const operationalCount = newHistory.filter(h => h.status === 'operational' || h.status === 'degraded').length
-      const uptime = newHistory.length > 0 ? (operationalCount / newHistory.length) * 100 : 100
-      
-      return {
-        ...service,
-        status: newStatus.status,
-        responseTime: newStatus.responseTime,
-        uptime,
-        history: newHistory,
-      }
-    }))
+      return updated
+    })
     
     setLastUpdated(new Date())
   }, [])
