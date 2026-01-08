@@ -99,22 +99,38 @@ export default function ServicesList({ services, loading }: ServicesListProps) {
               </div>
               <div className="pt-2 border-t border-border-color">
                 <div className="text-[0.7rem] text-text-tertiary uppercase tracking-wide mb-2 text-center">
-                  {historySlice.length > 0 && (
+                  {historySlice.length > 0 ? (
                     <>Last {formatUptimeDuration(historySlice.length)}</>
+                  ) : (
+                    <>Last 5m</>
                   )}
                 </div>
                 <div className="flex items-end gap-0.5 h-10">
-                  {historySlice.map((point, i) => (
-                    <div 
-                      key={i}
-                      className={`flex-1 min-h-[2px] rounded-sm transition-[height] duration-300 cursor-pointer ${getBarClass(point.status)}`}
-                      style={{ 
-                        height: `${Math.max(4, Math.min(100, (point.responseTime / 500) * 100))}%`,
-                        opacity: 0.3 + (i / 30) * 0.7
-                      }}
-                      title={`${point.responseTime}ms — ${point.time.toLocaleTimeString('ru-RU')}`}
-                    />
-                  ))}
+                  {historySlice.length === 0 ? (
+                    // Show placeholder bars when no data
+                    Array.from({ length: 30 }, (_, i) => (
+                      <div 
+                        key={i}
+                        className="flex-1 min-h-[2px] rounded-sm bg-white/20"
+                        style={{ 
+                          height: '20%',
+                          opacity: 0.2 + (i / 30) * 0.3
+                        }}
+                      />
+                    ))
+                  ) : (
+                    historySlice.map((point, i) => (
+                      <div 
+                        key={i}
+                        className={`flex-1 min-h-[2px] rounded-sm transition-[height] duration-300 cursor-pointer ${getBarClass(point.status)}`}
+                        style={{ 
+                          height: `${Math.max(4, Math.min(100, (point.responseTime / 500) * 100))}%`,
+                          opacity: 0.3 + (i / 30) * 0.7
+                        }}
+                        title={`${point.responseTime}ms — ${point.time.toLocaleTimeString('ru-RU')}`}
+                      />
+                    ))
+                  )}
                 </div>
                 <div className="flex justify-between items-center mt-1.5">
                   {firstPoint && <span className="text-[0.65rem] text-text-tertiary font-mono">{formatTime(firstPoint.time)}</span>}

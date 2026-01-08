@@ -80,8 +80,6 @@ export default function StatusChart({ services }: StatusChartProps) {
     setTooltip(null)
   }
 
-  const maxPoints = 90
-
   return (
     <div className="relative bg-card-bg border border-border-color rounded-2xl p-6 max-md:p-4" ref={containerRef}>
       <h2 className="text-xl font-semibold mb-6 text-text-primary">Uptime History</h2>
@@ -98,7 +96,16 @@ export default function StatusChart({ services }: StatusChartProps) {
             </div>
             <div className="flex gap-0.5 flex-1 min-h-[24px] items-center max-md:w-full" onMouseLeave={handleMouseLeave}>
               {service.history.length === 0 ? (
-                <div className="text-text-tertiary text-[0.85rem] italic">No data yet</div>
+                <div className="flex gap-0.5 flex-1">
+                  {/* Show placeholder bars when no data */}
+                  {Array.from({ length: 30 }, (_, i) => (
+                    <div
+                      key={i}
+                      className="flex-1 max-w-2 h-6 rounded-sm bg-white/20 max-md:h-5"
+                      style={{ opacity: 0.3 + (i / 30) * 0.4 }}
+                    />
+                  ))}
+                </div>
               ) : (
                 service.history.map((point, idx) => (
                   <div

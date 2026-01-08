@@ -64,7 +64,15 @@ function App() {
   // Fetch cached status from DB (fast, no live checks)
   const fetchCachedStatus = useCallback(async () => {
     try {
-      const response = await fetch(`${API_URL}/status`, { headers: apiHeaders })
+      const controller = new AbortController()
+      const timeoutId = setTimeout(() => controller.abort(), 5000) // 5 second timeout
+      
+      const response = await fetch(`${API_URL}/status`, { 
+        headers: apiHeaders,
+        signal: controller.signal
+      })
+      clearTimeout(timeoutId)
+      
       const data = await response.json()
       
       if (data.success && data.data) {
@@ -90,13 +98,23 @@ function App() {
       }
     } catch (error) {
       console.error('Failed to fetch cached status:', error)
+      // Keep default services if API fails
     }
   }, [])
 
   // Trigger a live check and update with results
   const triggerLiveCheck = useCallback(async () => {
     try {
-      const response = await fetch(`${API_URL}/status/check`, { method: 'POST', headers: apiHeaders })
+      const controller = new AbortController()
+      const timeoutId = setTimeout(() => controller.abort(), 10000) // 10 second timeout
+      
+      const response = await fetch(`${API_URL}/status/check`, { 
+        method: 'POST', 
+        headers: apiHeaders,
+        signal: controller.signal
+      })
+      clearTimeout(timeoutId)
+      
       const data = await response.json()
       
       if (data.success && data.data) {
@@ -127,23 +145,33 @@ function App() {
 
   const fetchIncidents = useCallback(async () => {
     try {
-      const response = await fetch(`${API_URL}/incidents?action=active`, { headers: apiHeaders })
+      const controller = new AbortController()
+      const timeoutId = setTimeout(() => controller.abort(), 5000) // 5 second timeout
+      
+      const response = await fetch(`${API_URL}/incidents?action=active`, { 
+        headers: apiHeaders,
+        signal: controller.signal
+      })
+      clearTimeout(timeoutId)
+      
       const data = await response.json()
       if (data.success && data.data) {
         setIncidents(data.data)
       }
-    } catch {
-      console.error('Failed to fetch incidents')
+    } catch (error) {
+      console.error('Failed to fetch incidents:', error)
     }
   }, [])
 
   useEffect(() => {
     const init = async () => {
       setLoading(true)
-      // First load cached data instantly, then trigger live check in background
-      await Promise.all([fetchCachedStatus(), fetchIncidents()])
+      // Load cached data first (should be fast)
+      await fetchCachedStatus()
       setLoading(false)
-      // Trigger live check after initial load (non-blocking)
+      
+      // Load incidents and trigger live check in background (non-blocking)
+      fetchIncidents()
       triggerLiveCheck()
     }
     
