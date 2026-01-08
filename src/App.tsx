@@ -176,9 +176,9 @@ function App() {
     }
     
     init()
-    // Live checks every 5 minutes
-    const statusInterval = setInterval(triggerLiveCheck, 300000)
-    const incidentsInterval = setInterval(fetchIncidents, 60000)
+    // Refresh data every 25 seconds
+    const statusInterval = setInterval(triggerLiveCheck, 25000)
+    const incidentsInterval = setInterval(fetchIncidents, 25000)
     
     return () => {
       clearInterval(statusInterval)
