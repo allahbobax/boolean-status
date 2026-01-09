@@ -176,9 +176,9 @@ function App() {
     }
     
     init()
-    // Refresh data every 25 seconds
-    const statusInterval = setInterval(triggerLiveCheck, 25000)
-    const incidentsInterval = setInterval(fetchIncidents, 25000)
+    // Refresh data every 40 seconds (matches backend cache duration)
+    const statusInterval = setInterval(triggerLiveCheck, 40000)
+    const incidentsInterval = setInterval(fetchIncidents, 40000)
     
     return () => {
       clearInterval(statusInterval)

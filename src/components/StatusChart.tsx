@@ -31,8 +31,8 @@ const ServiceIcon = ({ name }: { name: string }) => {
 const getStatusColor = (status: HistoryPoint['status'], responseTime: number) => {
   if (status === 'major') return '#ef4444'
   if (status === 'partial') return '#f97316'
-  if (status === 'degraded' || responseTime > 1500) return '#eab308'
-  if (responseTime > 800) return '#84cc16'
+  if (status === 'degraded' || responseTime > 2500) return '#eab308' // Увеличен порог для serverless cold start
+  if (responseTime > 1200) return '#84cc16'
   return '#22c55e'
 }
 
