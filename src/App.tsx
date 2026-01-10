@@ -66,15 +66,15 @@ function App() {
     try {
       const controller = new AbortController()
       const timeoutId = setTimeout(() => controller.abort(), 5000) // 5 second timeout
-      
-      const response = await fetch(`${API_URL}/status`, { 
+
+      const response = await fetch(`${API_URL}/status`, {
         headers: apiHeaders,
         signal: controller.signal
       })
       clearTimeout(timeoutId)
-      
+
       const data = await response.json()
-      
+
       if (data.success && data.data) {
         const mappedServices: ServiceStatus[] = data.data.map((service: {
           name: string
@@ -107,31 +107,36 @@ function App() {
     try {
       const controller = new AbortController()
       const timeoutId = setTimeout(() => controller.abort(), 10000) // 10 second timeout
-      
-      const response = await fetch(`${API_URL}/status/check`, { 
-        method: 'POST', 
+
+      const response = await fetch(`${API_URL}/status/check`, {
+        method: 'POST',
         headers: apiHeaders,
         signal: controller.signal
       })
       clearTimeout(timeoutId)
-      
+
       const data = await response.json()
-      
+
       if (data.success && data.data) {
         // Update services with live check results immediately
         setServices(prev => prev.map(service => {
           const liveResult = data.data.find((r: { name: string }) => r.name === service.name)
           if (liveResult) {
+            // Check if we already have this point (by time) to avoid duplicates
+            // But since this is a new live check, we usually don't.
+
+            // Limit in-memory history to last 150 points for performance
+            const newHistory = [...service.history, {
+              time: new Date(),
+              responseTime: liveResult.responseTime,
+              status: liveResult.status as HistoryPoint['status']
+            }].slice(-150);
+
             return {
               ...service,
               status: liveResult.status as ServiceStatus['status'],
               responseTime: liveResult.responseTime,
-              // Add new point to history
-              history: [...service.history.slice(-29), {
-                time: new Date(),
-                responseTime: liveResult.responseTime,
-                status: liveResult.status as HistoryPoint['status']
-              }]
+              history: newHistory
             }
           }
           return service
@@ -147,13 +152,13 @@ function App() {
     try {
       const controller = new AbortController()
       const timeoutId = setTimeout(() => controller.abort(), 5000) // 5 second timeout
-      
-      const response = await fetch(`${API_URL}/incidents?action=active`, { 
+
+      const response = await fetch(`${API_URL}/incidents?action=active`, {
         headers: apiHeaders,
         signal: controller.signal
       })
       clearTimeout(timeoutId)
-      
+
       const data = await response.json()
       if (data.success && data.data) {
         setIncidents(data.data)
@@ -172,29 +177,29 @@ function App() {
         fetchIncidents()
       ])
       setLoading(false)
-      
+
       // Live check в фоне (не блокирует UI)
       triggerLiveCheck()
     }
-    
+
     init()
     // Refresh data every 40 seconds (matches backend cache duration)
     const statusInterval = setInterval(triggerLiveCheck, 40000)
     const incidentsInterval = setInterval(fetchIncidents, 40000)
-    
+
     return () => {
       clearInterval(statusInterval)
       clearInterval(incidentsInterval)
     }
   }, [fetchCachedStatus, fetchIncidents, triggerLiveCheck])
 
-  const overallStatus = services.some(s => s.status === 'major') 
-    ? 'major' 
+  const overallStatus = services.some(s => s.status === 'major')
+    ? 'major'
     : services.some(s => s.status === 'partial')
-    ? 'partial'
-    : services.some(s => s.status === 'degraded')
-    ? 'degraded'
-    : 'operational'
+      ? 'partial'
+      : services.some(s => s.status === 'degraded')
+        ? 'degraded'
+        : 'operational'
 
   return (
     <div className="status-page">
