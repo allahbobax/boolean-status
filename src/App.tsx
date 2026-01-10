@@ -166,12 +166,14 @@ function App() {
   useEffect(() => {
     const init = async () => {
       setLoading(true)
-      // Load cached data first (should be fast)
-      await fetchCachedStatus()
+      // Загружаем ВСЁ параллельно для быстрой загрузки
+      await Promise.all([
+        fetchCachedStatus(),
+        fetchIncidents()
+      ])
       setLoading(false)
       
-      // Load incidents and trigger live check in background (non-blocking)
-      fetchIncidents()
+      // Live check в фоне (не блокирует UI)
       triggerLiveCheck()
     }
     
