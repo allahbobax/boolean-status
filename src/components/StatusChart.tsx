@@ -13,6 +13,9 @@ interface TooltipData {
   y: number
 }
 
+// Maximum number of history bars to display
+const MAX_HISTORY_BARS = 60
+
 const ServiceIcon = ({ name }: { name: string }) => {
   switch (name) {
     case 'Auth':
@@ -107,7 +110,7 @@ export default function StatusChart({ services }: StatusChartProps) {
                   ))}
                 </div>
               ) : (
-                service.history.map((point, idx) => (
+                service.history.slice(-MAX_HISTORY_BARS).map((point, idx) => (
                   <div
                     key={idx}
                     className="flex-1 max-w-2 h-6 rounded-sm cursor-pointer transition-all duration-150 opacity-85 hover:scale-y-[1.3] hover:opacity-100 hover:z-[1] max-md:h-5"

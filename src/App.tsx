@@ -57,6 +57,7 @@ const defaultServices: ServiceStatus[] = [
 
 const CACHE_KEY = 'boolean_status_data'
 const CACHE_TTL = 30000 // 30 seconds - don't use stale cache
+const REFRESH_INTERVAL = 60000 // 60 seconds
 
 function App() {
   // Try to load initial state from localStorage for "instant" feel
@@ -217,8 +218,8 @@ function App() {
     
     // Refresh data every 60 seconds (increased from 40s to reduce load)
     // Live check triggers DB refresh, so history stays in sync
-    const statusInterval = setInterval(triggerLiveCheck, 60000)
-    const incidentsInterval = setInterval(fetchIncidents, 60000)
+    const statusInterval = setInterval(triggerLiveCheck, REFRESH_INTERVAL)
+    const incidentsInterval = setInterval(fetchIncidents, REFRESH_INTERVAL)
 
     return () => {
       clearInterval(statusInterval)
@@ -238,7 +239,12 @@ function App() {
     <div className="status-page">
       <StatusHeader />
       <main className="status-main">
-        <StatusOverview status={overallStatus} lastUpdated={lastUpdated} loading={loading} />
+        <StatusOverview 
+          status={overallStatus} 
+          lastUpdated={lastUpdated} 
+          loading={loading}
+          refreshInterval={REFRESH_INTERVAL}
+        />
         <StatusChart services={services} />
         <ServicesList services={services} loading={loading} />
         <IncidentsList incidents={incidents} />

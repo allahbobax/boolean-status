@@ -1,9 +1,11 @@
+import { useState, useEffect } from 'react'
 import { BiCheckCircle, BiTime, BiError, BiXCircle, BiLoaderAlt } from 'react-icons/bi'
 
 interface StatusOverviewProps {
   status: 'operational' | 'degraded' | 'partial' | 'major'
   lastUpdated: Date
   loading: boolean
+  refreshInterval?: number
 }
 
 const STATUS_LABELS = {
@@ -33,7 +35,33 @@ const getBorderClass = (status: string) => {
   return 'border-[rgba(255,255,255,0.3)]'
 }
 
-export default function StatusOverview({ status, lastUpdated, loading }: StatusOverviewProps) {
+export default function StatusOverview({ 
+  status, 
+  lastUpdated, 
+  loading, 
+  refreshInterval = 60000
+}: StatusOverviewProps) {
+  const [progress, setProgress] = useState(0)
+  const [secondsLeft, setSecondsLeft] = useState(refreshInterval / 1000)
+
+  useEffect(() => {
+    // Reset progress when lastUpdated changes
+    setProgress(0)
+    setSecondsLeft(refreshInterval / 1000)
+
+    const startTime = Date.now()
+    const interval = setInterval(() => {
+      const elapsed = Date.now() - startTime
+      const newProgress = Math.min((elapsed / refreshInterval) * 100, 100)
+      const remaining = Math.max(Math.ceil((refreshInterval - elapsed) / 1000), 0)
+      
+      setProgress(newProgress)
+      setSecondsLeft(remaining)
+    }, 100)
+
+    return () => clearInterval(interval)
+  }, [lastUpdated, refreshInterval])
+
   if (loading) {
     return (
       <div className="bg-card-bg border border-border-color rounded-2xl p-8 text-center transition-all duration-300 max-md:p-6">
@@ -51,9 +79,23 @@ export default function StatusOverview({ status, lastUpdated, loading }: StatusO
         <StatusIcon status={status} />
         <span className="text-[1.75rem] font-bold text-text-primary max-md:text-xl">{STATUS_LABELS[status]}</span>
       </div>
-      <p className="text-text-tertiary text-sm mt-2">
-        Last updated: {lastUpdated.toLocaleTimeString()}
-      </p>
+      
+      {/* Update indicator */}
+      <div className="mt-4 flex items-center justify-center gap-2 text-text-tertiary text-sm">
+        <span>Updated {lastUpdated.toLocaleTimeString()}</span>
+        <span className="text-text-tertiary/50">•</span>
+        <span className="tabular-nums">{secondsLeft}s</span>
+      </div>
+      
+      {/* Progress bar */}
+      <div className="mt-3 mx-auto max-w-xs">
+        <div className="h-1 bg-white/5 rounded-full overflow-hidden">
+          <div 
+            className="h-full bg-gradient-to-r from-white/20 to-white/40 rounded-full transition-all duration-100 ease-linear"
+            style={{ width: `${progress}%` }}
+          />
+        </div>
+      </div>
     </div>
   )
 }
