@@ -6,7 +6,6 @@ interface StatusOverviewProps {
   lastUpdated: Date
   loading: boolean
   refreshInterval?: number
-  initialSecondsLeft?: number
 }
 
 const STATUS_LABELS = {
@@ -44,22 +43,30 @@ export default function StatusOverview({
 }: StatusOverviewProps) {
   const totalSeconds = refreshInterval / 1000
   const [secondsLeft, setSecondsLeft] = useState(totalSeconds)
-  const lastUpdateRef = useRef<number>(Date.now())
+  const startTimeRef = useRef<number | null>(null)
 
-  // Reset timer only when lastUpdated actually changes (real data refresh)
+  // Fully autonomous countdown timer - starts once on mount
   useEffect(() => {
-    lastUpdateRef.current = Date.now()
-    setSecondsLeft(totalSeconds)
-  }, [lastUpdated, totalSeconds])
+    // Initialize start time only once
+    if (startTimeRef.current === null) {
+      startTimeRef.current = Date.now()
+    }
 
-  // Independent countdown timer
-  useEffect(() => {
-    const interval = setInterval(() => {
-      const elapsed = (Date.now() - lastUpdateRef.current) / 1000
-      const remaining = Math.max(Math.ceil(totalSeconds - elapsed), 0)
-      setSecondsLeft(remaining)
-    }, 1000)
+    const tick = () => {
+      if (startTimeRef.current === null) return
+      
+      const elapsed = (Date.now() - startTimeRef.current) / 1000
+      const cyclePosition = elapsed % totalSeconds
+      const remaining = Math.ceil(totalSeconds - cyclePosition)
+      
+      // Handle edge case where remaining could be totalSeconds + 1 due to ceil
+      setSecondsLeft(remaining > totalSeconds ? totalSeconds : remaining)
+    }
 
+    // Initial tick
+    tick()
+    
+    const interval = setInterval(tick, 1000)
     return () => clearInterval(interval)
   }, [totalSeconds])
 
