@@ -123,6 +123,7 @@ function App() {
         }))
         setServices(mappedServices)
         setLastUpdated(new Date())
+        
         // Save to cache with timestamp
         localStorage.setItem(CACHE_KEY + '_services', JSON.stringify(mappedServices))
         localStorage.setItem(CACHE_KEY + '_timestamp', Date.now().toString())

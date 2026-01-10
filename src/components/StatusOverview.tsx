@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { BiCheckCircle, BiTime, BiError, BiXCircle, BiLoaderAlt } from 'react-icons/bi'
 
 interface StatusOverviewProps {
@@ -6,6 +6,7 @@ interface StatusOverviewProps {
   lastUpdated: Date
   loading: boolean
   refreshInterval?: number
+  initialSecondsLeft?: number
 }
 
 const STATUS_LABELS = {
@@ -39,28 +40,30 @@ export default function StatusOverview({
   status, 
   lastUpdated, 
   loading, 
-  refreshInterval = 60000
+  refreshInterval = 60000,
 }: StatusOverviewProps) {
-  const [progress, setProgress] = useState(0)
-  const [secondsLeft, setSecondsLeft] = useState(refreshInterval / 1000)
+  const totalSeconds = refreshInterval / 1000
+  const [secondsLeft, setSecondsLeft] = useState(totalSeconds)
+  const lastUpdateRef = useRef<number>(Date.now())
 
+  // Reset timer only when lastUpdated actually changes (real data refresh)
   useEffect(() => {
-    // Reset progress when lastUpdated changes
-    setProgress(0)
-    setSecondsLeft(refreshInterval / 1000)
+    lastUpdateRef.current = Date.now()
+    setSecondsLeft(totalSeconds)
+  }, [lastUpdated, totalSeconds])
 
-    const startTime = Date.now()
+  // Independent countdown timer
+  useEffect(() => {
     const interval = setInterval(() => {
-      const elapsed = Date.now() - startTime
-      const newProgress = Math.min((elapsed / refreshInterval) * 100, 100)
-      const remaining = Math.max(Math.ceil((refreshInterval - elapsed) / 1000), 0)
-      
-      setProgress(newProgress)
+      const elapsed = (Date.now() - lastUpdateRef.current) / 1000
+      const remaining = Math.max(Math.ceil(totalSeconds - elapsed), 0)
       setSecondsLeft(remaining)
-    }, 100)
+    }, 1000)
 
     return () => clearInterval(interval)
-  }, [lastUpdated, refreshInterval])
+  }, [totalSeconds])
+
+  const progress = ((totalSeconds - secondsLeft) / totalSeconds) * 100
 
   if (loading) {
     return (
