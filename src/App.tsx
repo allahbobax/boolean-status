@@ -244,7 +244,6 @@ function App() {
           status={overallStatus} 
           lastUpdated={lastUpdated} 
           loading={loading}
-          refreshInterval={REFRESH_INTERVAL}
         />
         <StatusChart services={services} />
         <ServicesList services={services} loading={loading} />
