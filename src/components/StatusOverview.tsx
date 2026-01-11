@@ -1,11 +1,9 @@
-import { useState, useEffect, useRef } from 'react'
 import { BiCheckCircle, BiTime, BiError, BiXCircle, BiLoaderAlt } from 'react-icons/bi'
 
 interface StatusOverviewProps {
   status: 'operational' | 'degraded' | 'partial' | 'major'
   lastUpdated: Date
   loading: boolean
-  refreshInterval?: number
 }
 
 const STATUS_LABELS = {
@@ -39,40 +37,7 @@ export default function StatusOverview({
   status, 
   lastUpdated, 
   loading, 
-  refreshInterval = 60000,
 }: StatusOverviewProps) {
-  const totalSeconds = refreshInterval / 1000
-  const [secondsLeft, setSecondsLeft] = useState(totalSeconds)
-  const startTimeRef = useRef<number | null>(null)
-
-  // Reset timer when lastUpdated changes (actual data refresh happened)
-  useEffect(() => {
-    startTimeRef.current = Date.now()
-    setSecondsLeft(totalSeconds)
-  }, [lastUpdated, totalSeconds])
-
-  // Countdown timer synced to actual refresh moments
-  useEffect(() => {
-    const tick = () => {
-      if (startTimeRef.current === null) {
-        startTimeRef.current = Date.now()
-      }
-      
-      const elapsed = (Date.now() - startTimeRef.current) / 1000
-      const remaining = Math.max(0, Math.ceil(totalSeconds - elapsed))
-      
-      setSecondsLeft(remaining)
-    }
-
-    // Initial tick
-    tick()
-    
-    const interval = setInterval(tick, 1000)
-    return () => clearInterval(interval)
-  }, [totalSeconds])
-
-  const progress = ((totalSeconds - secondsLeft) / totalSeconds) * 100
-
   if (loading) {
     return (
       <div className="bg-card-bg border border-border-color rounded-2xl p-8 text-center transition-all duration-300 max-md:p-6">
@@ -92,20 +57,8 @@ export default function StatusOverview({
       </div>
       
       {/* Update indicator */}
-      <div className="mt-4 flex items-center justify-center gap-2 text-text-tertiary text-sm">
+      <div className="mt-4 flex items-center justify-center text-text-tertiary text-sm">
         <span>Updated {lastUpdated.toLocaleTimeString()}</span>
-        <span className="text-text-tertiary/50">•</span>
-        <span className="tabular-nums">{secondsLeft}s</span>
-      </div>
-      
-      {/* Progress bar */}
-      <div className="mt-3 mx-auto max-w-xs">
-        <div className="h-1 bg-white/5 rounded-full overflow-hidden">
-          <div 
-            className="h-full bg-gradient-to-r from-white/20 to-white/40 rounded-full transition-all duration-100 ease-linear"
-            style={{ width: `${progress}%` }}
-          />
-        </div>
       </div>
     </div>
   )
