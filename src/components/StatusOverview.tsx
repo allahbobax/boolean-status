@@ -45,22 +45,23 @@ export default function StatusOverview({
   const [secondsLeft, setSecondsLeft] = useState(totalSeconds)
   const startTimeRef = useRef<number | null>(null)
 
-  // Fully autonomous countdown timer - starts once on mount
+  // Reset timer when lastUpdated changes (actual data refresh happened)
   useEffect(() => {
-    // Initialize start time only once
-    if (startTimeRef.current === null) {
-      startTimeRef.current = Date.now()
-    }
+    startTimeRef.current = Date.now()
+    setSecondsLeft(totalSeconds)
+  }, [lastUpdated, totalSeconds])
 
+  // Countdown timer synced to actual refresh moments
+  useEffect(() => {
     const tick = () => {
-      if (startTimeRef.current === null) return
+      if (startTimeRef.current === null) {
+        startTimeRef.current = Date.now()
+      }
       
       const elapsed = (Date.now() - startTimeRef.current) / 1000
-      const cyclePosition = elapsed % totalSeconds
-      const remaining = Math.ceil(totalSeconds - cyclePosition)
+      const remaining = Math.max(0, Math.ceil(totalSeconds - elapsed))
       
-      // Handle edge case where remaining could be totalSeconds + 1 due to ceil
-      setSecondsLeft(remaining > totalSeconds ? totalSeconds : remaining)
+      setSecondsLeft(remaining)
     }
 
     // Initial tick
