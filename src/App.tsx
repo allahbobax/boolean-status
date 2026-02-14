@@ -55,37 +55,11 @@ const defaultServices: ServiceStatus[] = [
   { name: 'Launcher', status: 'operational', responseTime: 0, uptime: 100, history: [] },
 ]
 
-const CACHE_KEY = 'boolean_status_data'
-const CACHE_TTL = 30000 // 30 seconds - don't use stale cache
-const REFRESH_INTERVAL = 60000 // 60 seconds
+const REFRESH_INTERVAL = 120000 // 2 minutes
 
 function App() {
-  // Try to load initial state from localStorage for "instant" feel
-  // But only if cache is fresh (less than 30 seconds old)
-  const [services, setServices] = useState<ServiceStatus[]>(() => {
-    const cached = localStorage.getItem(CACHE_KEY + '_services')
-    const cacheTime = localStorage.getItem(CACHE_KEY + '_timestamp')
-    
-    if (cached && cacheTime) {
-      const age = Date.now() - parseInt(cacheTime, 10)
-      if (age < CACHE_TTL) {
-        try {
-          const parsed = JSON.parse(cached)
-          return parsed.map((s: any) => ({
-            ...s,
-            history: s.history.map((h: any) => ({ ...h, time: new Date(h.time) }))
-          }))
-        } catch (e) {
-          return defaultServices
-        }
-      }
-    }
-    return defaultServices
-  })
-  const [incidents, setIncidents] = useState<Incident[]>(() => {
-    const cached = localStorage.getItem(CACHE_KEY + '_incidents')
-    return cached ? JSON.parse(cached) : []
-  })
+  const [services, setServices] = useState<ServiceStatus[]>(defaultServices)
+  const [incidents, setIncidents] = useState<Incident[]>([])
   const [loading, setLoading] = useState(true)
   const [lastUpdated, setLastUpdated] = useState<Date>(new Date())
 
@@ -123,10 +97,6 @@ function App() {
         }))
         setServices(mappedServices)
         setLastUpdated(new Date())
-        
-        // Save to cache with timestamp
-        localStorage.setItem(CACHE_KEY + '_services', JSON.stringify(mappedServices))
-        localStorage.setItem(CACHE_KEY + '_timestamp', Date.now().toString())
         return true
       }
       return false
@@ -135,48 +105,6 @@ function App() {
       return false
     }
   }, [])
-
-  // Trigger a live check - DON'T add to local history, just update current status
-  // History comes from DB via fetchCachedStatus
-  const triggerLiveCheck = useCallback(async () => {
-    try {
-      const controller = new AbortController()
-      const timeoutId = setTimeout(() => controller.abort(), 12000) // 12 second timeout
-
-      const response = await fetch(`${API_URL}/status/check`, {
-        method: 'POST',
-        headers: apiHeaders,
-        signal: controller.signal
-      })
-      clearTimeout(timeoutId)
-
-      const data = await response.json()
-
-      if (data.success && data.data) {
-        // Only update current status and responseTime, NOT history
-        // History will be updated on next fetchCachedStatus call
-        setServices(prev => prev.map(service => {
-          const liveResult = data.data.find((r: { name: string }) => r.name === service.name)
-          if (liveResult) {
-            return {
-              ...service,
-              status: liveResult.status as ServiceStatus['status'],
-              responseTime: liveResult.responseTime,
-              // Keep existing history - don't add new points here
-            }
-          }
-          return service
-        }))
-        setLastUpdated(new Date())
-        
-        // Refresh full data from DB after live check (in background)
-        // This ensures history stays in sync with DB
-        setTimeout(() => fetchCachedStatus(), 2000)
-      }
-    } catch (error) {
-      console.error('Failed to trigger live check:', error)
-    }
-  }, [fetchCachedStatus])
 
   const fetchIncidents = useCallback(async () => {
     try {
@@ -192,7 +120,6 @@ function App() {
       const data = await response.json()
       if (data.success && data.data) {
         setIncidents(data.data)
-        localStorage.setItem(CACHE_KEY + '_incidents', JSON.stringify(data.data))
       }
     } catch (error) {
       console.error('Failed to fetch incidents:', error)
@@ -203,30 +130,26 @@ function App() {
     const init = async () => {
       setLoading(true)
       // Загружаем данные из БД - это основной источник истории
-      const success = await fetchCachedStatus()
+      await fetchCachedStatus()
       await fetchIncidents()
       setLoading(false)
 
-      // Live check в фоне только если данные загрузились
-      // Не делаем live check при каждом refresh - это создаёт нагрузку
-      if (success) {
-        // Задержка чтобы не перегружать API при быстрых refresh
-        setTimeout(() => triggerLiveCheck(), 5000)
-      }
+      // НЕ делаем автоматический live check при загрузке
+      // Пользователь увидит данные из БД, а live check будет только по интервалу
+      // Это предотвращает лишнюю нагрузку при каждом refresh
     }
 
     init()
     
-    // Refresh data every 60 seconds (increased from 40s to reduce load)
-    // Live check triggers DB refresh, so history stays in sync
-    const statusInterval = setInterval(triggerLiveCheck, REFRESH_INTERVAL)
+    // Refresh data every 2 minutes from DB
+    const statusInterval = setInterval(fetchCachedStatus, REFRESH_INTERVAL)
     const incidentsInterval = setInterval(fetchIncidents, REFRESH_INTERVAL)
 
     return () => {
       clearInterval(statusInterval)
       clearInterval(incidentsInterval)
     }
-  }, [fetchCachedStatus, fetchIncidents, triggerLiveCheck])
+  }, [fetchCachedStatus, fetchIncidents])
 
   const overallStatus = services.some(s => s.status === 'major')
     ? 'major'
