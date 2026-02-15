@@ -67,7 +67,7 @@ function App() {
   const fetchCachedStatus = useCallback(async () => {
     try {
       const controller = new AbortController()
-      const timeoutId = setTimeout(() => controller.abort(), 8000) // 8 second timeout
+      const timeoutId = setTimeout(() => controller.abort(), 30000) // 30 second timeout
 
       const response = await fetch(`${API_URL}/status`, {
         headers: apiHeaders,
@@ -109,7 +109,7 @@ function App() {
   const fetchIncidents = useCallback(async () => {
     try {
       const controller = new AbortController()
-      const timeoutId = setTimeout(() => controller.abort(), 5000) // 5 second timeout
+      const timeoutId = setTimeout(() => controller.abort(), 30000) // 30 second timeout
 
       const response = await fetch(`${API_URL}/incidents?action=active`, {
         headers: apiHeaders,
