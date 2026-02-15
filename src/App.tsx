@@ -40,8 +40,8 @@ export interface Incident {
   updates: IncidentUpdate[]
 }
 
-const API_URL = 'https://api.booleanclient.ru'
-const API_KEY = import.meta.env.VITE_API_KEY || ''
+const API_URL = 'https://api.xisedlc.lol'
+const API_KEY = import.meta.env.VITE_API_KEY;
 
 const apiHeaders = {
   'Content-Type': 'application/json',
