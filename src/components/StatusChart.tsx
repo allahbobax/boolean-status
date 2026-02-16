@@ -1,5 +1,5 @@
 import { useState, useRef } from 'react'
-import { BiLock, BiCodeAlt, BiGlobe, BiPlay, BiDesktop } from 'react-icons/bi'
+import { BiLock, BiCodeAlt, BiGlobe, BiDesktop } from 'react-icons/bi'
 import type { ServiceStatus, HistoryPoint } from '../App'
 
 interface StatusChartProps {
