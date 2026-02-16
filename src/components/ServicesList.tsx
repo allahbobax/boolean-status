@@ -1,5 +1,5 @@
 import type { ServiceStatus } from '../App'
-import { BiCodeAlt, BiLock, BiGlobe, BiPlay, BiDesktop } from 'react-icons/bi'
+import { BiCodeAlt, BiLock, BiGlobe, BiDesktop } from 'react-icons/bi'
 
 interface ServicesListProps {
   services: ServiceStatus[]
@@ -21,8 +21,6 @@ const ServiceIcon = ({ name }: { name: string }) => {
       return <BiCodeAlt />
     case 'Site':
       return <BiGlobe />
-    case 'Launcher':
-      return <BiPlay />
     default:
       return <BiDesktop />
   }

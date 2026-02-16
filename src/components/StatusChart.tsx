@@ -24,8 +24,6 @@ const ServiceIcon = ({ name }: { name: string }) => {
       return <BiCodeAlt />
     case 'Site':
       return <BiGlobe />
-    case 'Launcher':
-      return <BiPlay />
     default:
       return <BiDesktop />
   }

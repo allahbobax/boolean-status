@@ -52,7 +52,6 @@ const defaultServices: ServiceStatus[] = [
   { name: 'Auth', status: 'operational', responseTime: 0, uptime: 100, history: [] },
   { name: 'API', status: 'operational', responseTime: 0, uptime: 100, history: [] },
   { name: 'Site', status: 'operational', responseTime: 0, uptime: 100, history: [] },
-  { name: 'Launcher', status: 'operational', responseTime: 0, uptime: 100, history: [] },
 ]
 
 const REFRESH_INTERVAL = 120000 // 2 minutes
